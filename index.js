@@ -30,6 +30,7 @@ const getEmployee = async () => {
         const [employee] = await db.query("SELECT * FROM employee")
         console.table(employee)
         getManager();
+        returnToMenu();
     }
     catch(error){
         console.log(error)
@@ -46,7 +47,6 @@ const getDepartment = async () => {
     catch(error){
         console.log(error)
     }
-    returnToMenu();
 }    
 
 // gets the data from the role table
@@ -150,42 +150,156 @@ const addEmployee = async () => {
 };
 
 // adds role to the employee_db
-const addRole = () => {
+const addRole = async () => {
+    try {
+      // Get the departments from the database
+      const departments = await getDepartment();
+  
+      inquirer
+        .prompt([
+          {
+            name: "title",
+            type: "input",
+            message: "What is the title of the role?",
+          },
+          {
+            name: "salary",
+            type: "input",
+            message: "What is the salary of the role?",
+          },
+          {
+            name: "departmentName",
+            type: "list",
+            message: "What department is this role in?",
+            choices: departments.map((department) => department.name),
+          },
+        ])
+        .then(async (answers) => {
+          try {
+            // Find the department with the selected name
+            const selectedDepartment = departments.find(
+              (department) => department.name === answers.departmentName
+            );
+  
+            // Insert the role into the database with the department ID
+            await db.query(
+              `INSERT INTO role (title, salary, department_id) VALUES ('${answers.title}', '${answers.salary}', '${selectedDepartment.id}')`
+            );
+  
+            console.log("Role added successfully.");
+          } catch (error) {
+            console.log("An error occurred when trying to add a role: ", error);
+          }
+  
+          returnToMenu();
+        });
+    } catch (error) {
+      console.log("An error occurred while fetching departments: ", error);
+      returnToMenu();
+    }
+  };
+
+const updateEmployeeRole = () => {
     inquirer
     .prompt([
         {
-            name: "title",
-            type: "input",
-            message: "What is the title of the role?"
+            name: "firstName",
+            title: "input",
+            message: "What is the employees first name?"
         },
         {
-            name: "salary",
-            type: "input",
-            message: "What is the salary of the role?"
+            name: "lastName",
+            title: "input",
+            message: "What is the employees last name?"
         },
         {
-            name: "department",
-            type: "list",
-            message: "What department is this role in?",
-            choices: async () => {
-                try {
-                    const departments = await getDepartment(); // Assuming getDepartment() is an asynchronous function that fetches departments
-                    return departments.map(department => department.name);
-                } catch (error) {
-                    console.log("An error occurred while fetching departments: ", error);
-                    return []; // Return an empty array as choices if there's an error
-                }
-            }
+            name: "newRole",
+            title: "input",
+            message: "What is the employees new role?"
         }
     ])
     .then( async (answers) => {
-        try {
-            await db.query(`INSERT INTO role (title, salary, department) VALUES ('${answers.title}', '${answers.salary}', '${answers.department}')`);
+        try{
+            const [employee] = await db.query(
+                "SELECT * FROM employee WHERE first_name = ? AND last_name = ?",
+                [answers.firstName, answers.lastName]
+              );
+      
+              if (employee.length === 0) {
+                console.log("Employee does not exist. Please try again.");
+                init();
+                return;
+              }
+      
+              const [role] = await db.query(
+                "SELECT id FROM role WHERE title = ?",
+                [answers.newRole]
+              );
+      
+              if (role.length === 0) {
+                console.log("Role does not exist. Please try again.");
+                init();
+                return;
+              }
+      
+              await db.query(
+                "UPDATE employee SET role_id = ? WHERE first_name = ? AND last_name = ?",
+                [role[0].id, answers.firstName, answers.lastName]
+              );
+      
+              console.log("Employee role updated successfully.");
         }
-        catch(error) {
-            console.log("An error was encountered when trying to add role: ", error);
+        catch (error) {
+            console.log("An error occurred when updating the employee role: ", error);
         }
-    })
+        returnToMenu();
+    });
+};
+
+const updateManager = () => {
+    inquirer
+    .prompt([
+        {
+            name: "firstName",
+            type: "input",
+            message: "What is the employees/managers first name?"
+        },
+        {
+            name: "lastName",
+            type: "input",
+            message: "What is the employees/managers last name?"
+        },
+        {
+            name: "managerId",
+            type: "input",
+            message: "What is the employees/managers id?"
+        }
+    ])
+    .then( async (answers) => {
+        try{
+            const [employee] = await db.query(
+                "SELECT * FROM employee WHERE manager_id = ?",
+                [answers.firstName, answers.lastName]
+              );
+      
+              if (employee.length === 0) {
+                console.log("Manager does not exist. Please try again.");
+                init();
+                return;
+              }
+
+              await db.query(
+                "UPDATE employee SET manager_id = ? WHERE first_name = ? AND last_name = ?",
+                [managerExists[0].id, answers.firstName, answers.lastName]
+              );
+      
+              console.log("Employee role updated successfully.");
+        }
+        catch (error) {
+            console.log("An error occurred when updating the employee role: ", error);
+        }
+        returnToMenu();
+    });
 };
 
 // initializes code and prompts the user with inquirer
@@ -204,7 +318,7 @@ function init(){
             "Add a role",
             "Add an employee",
             "Update an employee role",
-            "Update employee's manager or change to manager status",
+            "Update manager or change employee to manager status",
             "Quit",
             ]
         }
@@ -230,8 +344,10 @@ function init(){
                     addEmployee();
                     break;
                 case "Update an employee role":
+                    updateEmployeeRole();
                     break;
-                case "Update employee's manager or change to manager status":
+                case "Update manager or change employee to manager status":
+                    updateManager();
                     break;
                 default:
                     process.exit(0);
