@@ -25,70 +25,44 @@ const returnToMenu = () => {
       });
   };
 
-const getEmployee = async () => {
-    try{
-        const [employee] = await db.query("SELECT * FROM employee")
-        console.table(employee)
-        getManager();
-        returnToMenu();
-    }
-    catch(error){
-        console.log(error)
-    }
-}  
-
 // gets the data from the department table
 const getDepartment = async () => {
     try{
         const [departments] = await db.query("SELECT * FROM department")
         console.table(departments)
+        returnToMenu();
         return departments;
     }
     catch(error){
         console.log(error)
     }
-}    
-
-// gets the data from the role table
-const getRole = () => {
-    return db.query("SELECT * FROM role")
-    .then(([rows]) => {
-        console.table(rows)
-        returnToMenu()
-    })
-    .catch((error) => {
-        console.error(error);
-        return [];
-    })
 };
 
-const getManager = () => {
-    inquirer
-    .prompt([
-        {
-            name: "manager",
-            type: "confirm",
-            message: "Get manager information?",
-            default: true
-        }
-        ])
-        .then((answer) => {
-            if(answer.manager){
-                return db.query("SELECT first_name, last_name FROM employee WHERE manager_id is NULL")
-            } else {
-                process.exit(0);
-            }
-        })
-        .then(([rows]) => {
-            const manager = rows.map((row) => `${row.first_name} ${row.last_name}`);
-            returnToMenu();
-            return manager;
-        })
-        .catch((error) => {
-            console.error(error);
-            return [];
-        })
-}
+// gets the data from the role table
+const getRole = async () => {
+    try {
+      const [rows] = await db.query("SELECT * FROM role");
+      console.table(rows);
+      returnToMenu();
+      return rows;
+    } catch (error) {
+      console.log("An error occurred while fetching roles: ", error);
+      return []; // Return an empty array if an error occurs
+    }
+};
+
+// gets data from employee table
+const getEmployee = async () => {
+    try{
+        const [employee] = await db.query("SELECT * FROM employee")
+        console.table(employee);
+        returnToMenu();
+        return employee;
+    }
+    catch(error){
+        console.log(error)
+    }
+};
 
 // adds department to the employee_db 
 const addDepartment = async () => {
@@ -112,48 +86,11 @@ const addDepartment = async () => {
     })
 };
 
-// adds employee to the employee_db 
-const addEmployee = async () => {
-    inquirer
-            .prompt([
-            {
-                name: "firstName",
-                type: "input",
-                message: "Add employee first name."
-            },
-            {
-                name: "lastName",
-                type: "input",
-                message: "Add employee last name."
-            },
-            {
-                name: "role",
-                message: "What is the employee's role?",
-                type: "list",
-                choices: () =>
-                    db
-                    .query("SELECT * FROM role")
-                    .then(([rows]) => rows.map((role) => role.title)),
-                },
-            ])
-            .then(async (answers) => {
-                try{
-                const [rows] = await db.query(`INSERT INTO employee (first_name, last_name, role) VALUES ('${answers.firstName}', '${answers.lastName}', '${answers.role}')`);
-                console.table = rows;
-                getEmployee();
-                }
-                catch(error){
-                    console.error(error);
-                    return false;
-                }
-            })
-};
-
 // adds role to the employee_db
 const addRole = async () => {
     try {
       // Get the departments from the database
-      const departments = await getDepartment();
+      const [departments] = await db.query("SELECT * FROM department");
   
       inquirer
         .prompt([
@@ -180,24 +117,68 @@ const addRole = async () => {
             const selectedDepartment = departments.find(
               (department) => department.name === answers.departmentName
             );
-  
             // Insert the role into the database with the department ID
             await db.query(
               `INSERT INTO role (title, salary, department_id) VALUES ('${answers.title}', '${answers.salary}', '${selectedDepartment.id}')`
             );
-  
             console.log("Role added successfully.");
+            returnToMenu();
           } catch (error) {
             console.log("An error occurred when trying to add a role: ", error);
           }
-  
-          returnToMenu();
         });
     } catch (error) {
       console.log("An error occurred while fetching departments: ", error);
-      returnToMenu();
     }
-  };
+};
+
+// adds employee to the employee_db 
+const addEmployee = async () => {
+    try {
+      const [roles] = await db.query("SELECT * FROM role"); // Fetch roles from the database
+  
+      inquirer
+        .prompt([
+          {
+            name: "firstName",
+            type: "input",
+            message: "Add employee first name.",
+          },
+          {
+            name: "lastName",
+            type: "input",
+            message: "Add employee last name.",
+          },
+          {
+            name: "roleId",
+            message: "What is the employee's role?",
+            type: "list",
+            choices: roles.map((role) => ({
+              name: role.title,
+              value: role.id,
+            })),
+          },
+        ])
+        .then(async (answers) => {
+            try {
+              const selectedRole = roles.find((role) => role.id === answers.roleId);
+              if (!selectedRole) {
+                console.log("Invalid role selected. Please try again.");
+              }
+              await db.query(
+                `INSERT INTO employee (first_name, last_name, role_id) VALUES (?, ?, ?)`,
+                [answers.firstName, answers.lastName, selectedRole.id]
+              );
+              console.log("Employee added successfully.");
+              returnToMenu();
+            } catch (error) {
+              console.log("An error occurred when trying to add an employee: ", error);
+            }
+          });
+    } catch (error) {
+      console.log("An error occurred while fetching roles: ", error);
+    }
+};
 
 const updateEmployeeRole = () => {
     inquirer
@@ -318,7 +299,6 @@ function init(){
             "Add a role",
             "Add an employee",
             "Update an employee role",
-            "Update manager or change employee to manager status",
             "Quit",
             ]
         }
@@ -345,9 +325,6 @@ function init(){
                     break;
                 case "Update an employee role":
                     updateEmployeeRole();
-                    break;
-                case "Update manager or change employee to manager status":
-                    updateManager();
                     break;
                 default:
                     process.exit(0);
