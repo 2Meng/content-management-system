@@ -237,52 +237,6 @@ const updateEmployeeRole = () => {
     });
 };
 
-const updateManager = () => {
-    inquirer
-    .prompt([
-        {
-            name: "firstName",
-            type: "input",
-            message: "What is the employees/managers first name?"
-        },
-        {
-            name: "lastName",
-            type: "input",
-            message: "What is the employees/managers last name?"
-        },
-        {
-            name: "managerId",
-            type: "input",
-            message: "What is the employees/managers id?"
-        }
-    ])
-    .then( async (answers) => {
-        try{
-            const [employee] = await db.query(
-                "SELECT * FROM employee WHERE manager_id = ?",
-                [answers.firstName, answers.lastName]
-              );
-      
-              if (employee.length === 0) {
-                console.log("Manager does not exist. Please try again.");
-                init();
-                return;
-              }
-
-              await db.query(
-                "UPDATE employee SET manager_id = ? WHERE first_name = ? AND last_name = ?",
-                [managerExists[0].id, answers.firstName, answers.lastName]
-              );
-      
-              console.log("Employee role updated successfully.");
-        }
-        catch (error) {
-            console.log("An error occurred when updating the employee role: ", error);
-        }
-        returnToMenu();
-    });
-};
-
 // initializes code and prompts the user with inquirer
 function init(){
     inquirer
