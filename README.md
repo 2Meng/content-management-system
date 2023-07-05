@@ -1,5 +1,6 @@
 # Employee-Tracker-SQL
 
+![image](https://github.com/2Meng/content-management-system/assets/91503750/e0718fe1-ea7b-42d0-9cd6-6f065ba6ee05)
 
 # Description
 This is a command-line application to manage a company's employee database, using Node.js and MySQL. By using inquirers' prepared statements and prompts, the user doesn't need to write SQL scripts to perform different actions.
@@ -16,5 +17,4 @@ This will load the database and seeds.
 
 - The final step is to add your 'root password' in the server.js for testing and then open an integrated terminal from the index.js file and enter the command 'node index.js' to start the application. From there you can you use arrow keys to scroll through options and 'enter' to select an action.
 
-![image](https://github.com/2Meng/content-management-system/assets/91503750/e0718fe1-ea7b-42d0-9cd6-6f065ba6ee05)
 ![image](https://github.com/2Meng/content-management-system/assets/91503750/f5762b67-c50b-4279-ace0-7401ec8b4eda)
