@@ -15,10 +15,10 @@ To use this application you will need Node.js and MySQL.
 - then 'source seeds.sql'.
 This will load the database and seeds.
 
-- The final step is to add your 'root password' in the server.js for testing and then open an integrated terminal from the index.js file and enter the command 'node index.js' to start the application. From there you can you use arrow keys to scroll through options and 'enter' to select an action.
+- The final step is to add your 'root password' in the server.js for testing and then open an integrated terminal from the index.js file and enter the command 'node index.js' to start the application. From there you can you use arrow keys to scroll through options and 'enter' to select an action. 
 
+# Demonstration video
 
 https://github.com/2Meng/content-management-system/assets/91503750/c9a3f005-e10b-4432-a7b4-75b8789beaaf
-
 
 ![image](https://github.com/2Meng/content-management-system/assets/91503750/f5762b67-c50b-4279-ace0-7401ec8b4eda)
